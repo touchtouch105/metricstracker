@@ -20,91 +20,92 @@ import java.util.Map;
 
 public class MetricsTrackerPanel extends PluginPanel
 {
-    private final MetricsTrackerPlugin plugin;
-    private MetricsTrackerConfig config;
     @Inject
     private Client client;
-    private final JPanel overallPanel = new JPanel();
-    private final JLabel monstersKilled = new JLabel("Killed");
-    private final JLabel monstersPerHour = new JLabel("Per hour");
-    private final Map<MetricsManager, MetricsInfoBox> infoBoxes = new HashMap<>();
-    private List<MetricsManager> metrics = new ArrayList<>();
-    private MetricsManager overallMetrics = null;
+    private final MetricsTrackerPlugin plugin;
     private final String PANEL_KEY_STRING = "PanelStringMasterKey";
+    private final JPanel overallPanel = new JPanel();
+    private final JLabel monstersKilled = new JLabel( "Killed" );
+    private final JLabel monstersPerHour = new JLabel( "Per hour" );
+    private final Map< MetricsManager, MetricsInfoBox > infoBoxes = new HashMap<>();
+    private List< MetricsManager > metrics = new ArrayList<>();
+    private MetricsManager overallMetrics = null;
+    private MetricsTrackerConfig config;
     JComponent infoBoxPanel;
-    public MetricsTrackerPanel(MetricsTrackerPlugin metricsTrackerPlugin, MetricsTrackerConfig config, Client client)
+
+    public MetricsTrackerPanel( MetricsTrackerPlugin metricsTrackerPlugin, MetricsTrackerConfig config, Client client )
     {
         super();
         this.plugin = metricsTrackerPlugin;
         this.config = config;
         this.client = client;
 
-        setBorder(new EmptyBorder(6, 6, 6, 6));
-        setBackground(ColorScheme.DARK_GRAY_COLOR);
-        setLayout(new BorderLayout());
+        setBorder( new EmptyBorder( 6, 6, 6, 6 ) );
+        setBackground( ColorScheme.DARK_GRAY_COLOR );
+        setLayout( new BorderLayout() );
 
         final JPanel layoutPanel = new JPanel();
-        BoxLayout boxLayout = new BoxLayout(layoutPanel, BoxLayout.Y_AXIS);
-        layoutPanel.setLayout(boxLayout);
-        add(layoutPanel, BorderLayout.NORTH);
+        BoxLayout boxLayout = new BoxLayout( layoutPanel, BoxLayout.Y_AXIS );
+        layoutPanel.setLayout( boxLayout );
+        add( layoutPanel, BorderLayout.NORTH );
 
-        overallPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        overallPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        overallPanel.setLayout(new BorderLayout());
-        overallPanel.setVisible(true); // this will only become visible when the player gets exp
+        overallPanel.setBorder( new EmptyBorder( 10, 10, 10, 10 ) );
+        overallPanel.setBackground( ColorScheme.DARKER_GRAY_COLOR );
+        overallPanel.setLayout( new BorderLayout() );
+        overallPanel.setVisible( true ); // this will only become visible when the player gets exp
 
         // Create reset all menu
-        final JMenuItem reset = new JMenuItem("Reset All");
-        reset.addActionListener(e -> plugin.resetState());
+        final JMenuItem reset = new JMenuItem( "Reset All" );
+        reset.addActionListener( e -> plugin.resetState() );
 
         // Create popup menu
         final JPopupMenu popupMenu = new JPopupMenu();
-        popupMenu.setBorder(new EmptyBorder(5, 5, 5, 5));
-        popupMenu.add(reset);
+        popupMenu.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
+        popupMenu.add( reset );
 
-        popupMenu.addPopupMenuListener(new PopupMenuListener()
+        popupMenu.addPopupMenuListener( new PopupMenuListener()
         {
             @Override
-            public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent)
+            public void popupMenuWillBecomeVisible( PopupMenuEvent popupMenuEvent )
             {
             }
 
             @Override
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent)
+            public void popupMenuWillBecomeInvisible( PopupMenuEvent popupMenuEvent )
             {
             }
 
             @Override
-            public void popupMenuCanceled(PopupMenuEvent popupMenuEvent)
+            public void popupMenuCanceled( PopupMenuEvent popupMenuEvent )
             {
             }
         });
-        overallPanel.setComponentPopupMenu(popupMenu);
+        overallPanel.setComponentPopupMenu( popupMenu );
 
-        final JLabel overallIcon = new JLabel(new ImageIcon(ImageUtil.loadImageResource(metricsTrackerPlugin.getClass(), "/metrics_tracker_icon.png")));
+        final JLabel overallIcon = new JLabel( new ImageIcon( ImageUtil.loadImageResource(metricsTrackerPlugin.getClass(), "/metrics_tracker_icon.png" ) ) );
 
         final JPanel overallInfo = new JPanel();
-        overallInfo.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        overallInfo.setLayout(new GridLayout(2, 1));
-        overallInfo.setBorder(new EmptyBorder(0, 10, 0, 0));
+        overallInfo.setBackground( ColorScheme.DARKER_GRAY_COLOR );
+        overallInfo.setLayout( new GridLayout( 2, 1 ) );
+        overallInfo.setBorder( new EmptyBorder( 0, 10, 0, 0) );
 
-        monstersKilled.setFont(FontManager.getRunescapeSmallFont());
-        monstersPerHour.setFont(FontManager.getRunescapeSmallFont());
+        monstersKilled.setFont( FontManager.getRunescapeSmallFont() );
+        monstersPerHour.setFont( FontManager.getRunescapeSmallFont() );
 
-        overallInfo.add(monstersKilled);
-        overallInfo.add(monstersPerHour);
+        overallInfo.add( monstersKilled );
+        overallInfo.add( monstersPerHour );
 
-        overallPanel.add(overallIcon, BorderLayout.WEST);
-        overallPanel.add(overallInfo, BorderLayout.CENTER);
+        overallPanel.add( overallIcon, BorderLayout.WEST );
+        overallPanel.add( overallInfo, BorderLayout.CENTER );
 
         infoBoxPanel = new DragAndDropReorderPane();
 
-        layoutPanel.add(overallPanel);
-        layoutPanel.add(infoBoxPanel);
+        layoutPanel.add( overallPanel );
+        layoutPanel.add( infoBoxPanel );
 
     }
 
-    public void addEvent(Event event)
+    public void addEvent( Event event )
     {
         if ( this.overallMetrics == null )
         {
@@ -118,7 +119,7 @@ public class MetricsTrackerPanel extends PluginPanel
         boolean found = false;
         for ( MetricsManager m : metrics )
         {
-            if ( m.containsAnyKeyFrom(event.getInformation()))
+            if ( m.containsAnyKeyFrom( event.getInformation() ) )
             {
                 found = true;
                 m.addDataPoint( event );
@@ -133,6 +134,7 @@ public class MetricsTrackerPanel extends PluginPanel
 
         updateOverallTrackerText();
     }
+
     public void addMetric(Event event)
     {
         MetricsManager metric = new MetricsManager( event );
@@ -141,19 +143,24 @@ public class MetricsTrackerPanel extends PluginPanel
         infoBoxes.get( metric ).update( infoBoxPanel, metric );
 
     }
+
     public void resetAllInfoBoxes()
     {
-        int sz = metrics.size();
-        for ( int i = sz - 1; i >= 0; --i )
+        int sz = metrics.size() - 1;
+        if ( sz >= 0 )
         {
-            MetricsManager m = metrics.get(i);
-            if ( infoBoxes.containsKey( m ) )
+            for ( int i = sz; i >= 0; --i )
             {
-                infoBoxes.get(m).reset( infoBoxPanel );
-                infoBoxes.remove(m);
+                MetricsManager m = metrics.get( i );
+                if ( infoBoxes.containsKey( m ) )
+                {
+                    infoBoxes.get( m ).reset( infoBoxPanel );
+                    infoBoxes.remove( m );
+                }
+
+                m.reset();
+                metrics.remove( i );
             }
-            m.reset();
-            metrics.remove(i);
         }
 
         this.overallMetrics = new MetricsManager( PANEL_KEY_STRING );
@@ -161,11 +168,11 @@ public class MetricsTrackerPanel extends PluginPanel
         monstersPerHour.setText( "Total Per hour:" );
     }
 
-    public void removeInfoBox(MetricsManager metric)
+    public void removeInfoBox( MetricsManager metric )
     {
         if ( infoBoxes.containsKey( metric ) )
         {
-            infoBoxes.get(metric).reset( infoBoxPanel );
+            infoBoxes.get( metric ).reset( infoBoxPanel );
             infoBoxes.remove( metric );
         }
 
@@ -176,7 +183,7 @@ public class MetricsTrackerPanel extends PluginPanel
         }
     }
 
-    public void removeOthers(MetricsManager metric)
+    public void removeOthers( MetricsManager metric )
     {
         for ( MetricsManager m : metrics )
         {
@@ -187,11 +194,11 @@ public class MetricsTrackerPanel extends PluginPanel
 
             if ( infoBoxes.containsKey( m ) )
             {
-                infoBoxes.get(m).reset( infoBoxPanel );
-                infoBoxes.remove(m);
+                infoBoxes.get( m ).reset( infoBoxPanel );
+                infoBoxes.remove( m );
             }
             m.reset();
-            metrics.remove(m);
+            metrics.remove( m );
         }
     }
 

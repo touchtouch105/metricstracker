@@ -7,7 +7,6 @@ import net.runelite.api.Client;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
-import net.runelite.api.events.NpcDespawned;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -43,33 +42,35 @@ public class MetricsTrackerPlugin extends Plugin
     private MetricsTrackerConfig config;
     @Inject
     private ClientToolbar clientToolbar;
-    private EventConsumer consumer;
-    private final DamageHandler damageHandler = new DamageHandler();
-    private MetricsTrackerPanel loggerPanel;
     private static final String ICON_FILE = "/metrics_tracker_icon.png";
     private static final String PLUGIN_NAME = "Metrics Tracker";
+    private final DamageHandler damageHandler = new DamageHandler();
+    private MetricsTrackerPanel loggerPanel;
+    private EventConsumer consumer;
+
     @Override
     protected void startUp() throws Exception
     {
          loggerPanel = new MetricsTrackerPanel( this , config, client );
-         final BufferedImage icon = ImageUtil.loadImageResource(getClass(), ICON_FILE);
+         final BufferedImage icon = ImageUtil.loadImageResource( getClass(), ICON_FILE );
          NavigationButton navigationButton = NavigationButton.builder()
-            .tooltip(PLUGIN_NAME)
-            .icon(icon)
-            .priority(6)
-            .panel(loggerPanel)
+            .tooltip( PLUGIN_NAME )
+            .icon( icon )
+            .priority( 6 )
+            .panel( loggerPanel )
             .build();
-        clientToolbar.addNavigation(navigationButton);
-        consumer = new EventConsumer(loggerPanel);
+        clientToolbar.addNavigation( navigationButton );
+        consumer = new EventConsumer( loggerPanel );
     }
+
     @Provides
-    MetricsTrackerConfig provideConfig(ConfigManager configManager )
+    MetricsTrackerConfig provideConfig( ConfigManager configManager )
     {
         return configManager.getConfig( MetricsTrackerConfig.class );
     }
 
     @Subscribe
-    public void onGameTick(GameTick gameTick)
+    public void onGameTick( GameTick gameTick )
     {
         if ( !config.monstersKilled() )
         {
@@ -81,12 +82,13 @@ public class MetricsTrackerPlugin extends Plugin
     }
 
     @Subscribe
-    public void onHitsplatApplied(HitsplatApplied event)
+    public void onHitsplatApplied( HitsplatApplied event )
     {
         if ( !config.monstersKilled() )
         {
             return;
         }
+
         Actor actor = event.getActor();
         Hitsplat hitsplat = event.getHitsplat();
 
@@ -97,29 +99,18 @@ public class MetricsTrackerPlugin extends Plugin
         }
     }
 
-    @Subscribe
-    public void onNpcDespawned(NpcDespawned event)
-    {
-        if ( config.monstersKilled() )
-        {
-//            damageHandler.emitNPCDespawnEvent(event.getActor(), consumer);
-        }
-    }
-
     public void resetState()
     {
         loggerPanel.resetAllInfoBoxes();
     }
 
-    public void resetSingleMetric(MetricsManager metric)
+    public void resetSingleMetric( MetricsManager metric )
     {
-        loggerPanel.removeInfoBox(metric);
+        loggerPanel.removeInfoBox( metric );
     }
 
-    void resetOthers(MetricsManager metric)
+    void resetOthers( MetricsManager metric )
     {
-        loggerPanel.removeOthers(metric);
+        loggerPanel.removeOthers( metric );
     }
-
-
 }

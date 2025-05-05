@@ -27,7 +27,7 @@ public class Event
     @Getter
     public int Quantity;
 
-    public Event(eventType type, List<String> info, int quantity )
+    public Event( eventType type, List<String> info, int quantity )
     {
         this.Type = type;
         this.Information = info;

@@ -14,13 +14,11 @@ public class DamageHandler
     private int tickCounter = 0;
     private final int ticksToSelfDestruct = 100;
     private HashMap<Actor, Event> eventsToValidate = new HashMap<>();
-    private List<Actor> actorsToTrackOneTick = new ArrayList<>();
-    private List<Integer> TickCycle = new ArrayList<>();
     public boolean isMonsterKilledEvent( Hitsplat hitsplat,  Actor actor, NpcUtil npcUtil )
     {
         if ( hitsplat.isMine() )
         {
-            if ( !(actor instanceof NPC) )
+            if ( !( actor instanceof NPC ) )
             {
                 return false;
             }
@@ -31,7 +29,7 @@ public class DamageHandler
                 return true;
             }
 
-            if ( npcUtil.isDying((NPC) actor) )
+            if ( npcUtil.isDying( ( NPC ) actor) )
             {
                 return true;
             };
@@ -47,7 +45,7 @@ public class DamageHandler
         info.add( actor.getName() );
         Event event = new Event( eventType, info, 1 );
         tickCounter = 0;
-        eventsToValidate.put(actor, event);
+        eventsToValidate.put( actor, event );
     }
 
 
@@ -56,15 +54,15 @@ public class DamageHandler
         int sz = eventsToValidate.keySet().size() - 1;
         if ( sz >= 0 )
         {
-            Actor actors[] = eventsToValidate.keySet().toArray(new Actor[0]);
+            Actor actors[] = eventsToValidate.keySet().toArray( new Actor[0] );
             for ( int i = sz; i >= 0; --i )
             {
                 Actor actor = actors[i];
                 if ( actor == null
                 ||   actor.isDead()
-                ||   npcUtil.isDying((NPC) actor ) )
+                ||   npcUtil.isDying( ( NPC ) actor ) )
                 {
-                    consumer.addPendingEvent(eventsToValidate.get(actor));
+                    consumer.addPendingEvent( eventsToValidate.get( actor ) );
                     eventsToValidate.remove( actor );
                 }
             }

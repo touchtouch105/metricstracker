@@ -2,7 +2,7 @@ package com.metricstracker;
 
 import net.runelite.client.config.*;
 
-@ConfigGroup("metricstracker")
+@ConfigGroup( "metricstracker" )
 public interface MetricsTrackerConfig extends Config
 {
     @ConfigItem(
