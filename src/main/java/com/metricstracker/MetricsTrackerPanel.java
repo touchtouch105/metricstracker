@@ -185,20 +185,27 @@ public class MetricsTrackerPanel extends PluginPanel
 
     public void removeOthers( MetricsManager metric )
     {
-        for ( MetricsManager m : metrics )
-        {
-            if ( metric == m )
-            {
-                continue;
-            }
+        int sz = metrics.size() - 1;
 
-            if ( infoBoxes.containsKey( m ) )
+        if ( sz > 0 )
+        {
+            for ( int i = sz; i >= 0; --i )
             {
-                infoBoxes.get( m ).reset( infoBoxPanel );
-                infoBoxes.remove( m );
+                MetricsManager m = metrics.get( i );
+                if ( metric == m )
+                {
+                    continue;
+                }
+
+                if ( infoBoxes.containsKey( m ) )
+                {
+                    infoBoxes.get( m ).reset( infoBoxPanel );
+                    infoBoxes.remove( m );
+                }
+
+                m.reset();
+                metrics.remove ( i );
             }
-            m.reset();
-            metrics.remove( m );
         }
     }
 
