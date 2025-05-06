@@ -3,6 +3,7 @@ package com.metricstracker;
 import net.runelite.api.Actor;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.NPC;
+import net.runelite.api.gameval.NpcID;
 import net.runelite.client.game.NpcUtil;
 
 import java.util.ArrayList;
@@ -16,13 +17,13 @@ public class DamageHandler
     private HashMap<Actor, Event> eventsToValidate = new HashMap<>();
     public boolean isMonsterKilledEvent( Hitsplat hitsplat,  Actor actor, NpcUtil npcUtil )
     {
+        if ( !( actor instanceof NPC ) )
+        {
+            return false;
+        }
+
         if ( hitsplat.isMine() )
         {
-            if ( !( actor instanceof NPC ) )
-            {
-                return false;
-            }
-
             // Start tracking the mob after the player deals damage below 50% hp
             if ( actor.getHealthRatio() <= 0 || ( actor.getHealthRatio() <= actor.getHealthScale() / 2 )  )
             {
@@ -58,9 +59,8 @@ public class DamageHandler
             for ( int i = sz; i >= 0; --i )
             {
                 Actor actor = actors[i];
-                if ( actor == null
-                ||   actor.isDead()
-                ||   npcUtil.isDying( ( NPC ) actor ) )
+
+                if ( isActorDead( actor, npcUtil ) )
                 {
                     consumer.addPendingEvent( eventsToValidate.get( actor ) );
                     eventsToValidate.remove( actor );
@@ -73,6 +73,33 @@ public class DamageHandler
                 eventsToValidate.clear();
                 tickCounter = 0;
             }
+        }
+    }
+
+    private boolean isActorDead( Actor actor, NpcUtil npcUtil )
+    {
+        if ( actor == null
+        ||   npcUtil.isDying( ( NPC ) actor )
+        ||   damageHandlerCheckSpecialCases( ( NPC ) actor ) )
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean damageHandlerCheckSpecialCases( NPC npc )
+    {
+        int id = npc.getId();
+
+        switch ( id )
+        {
+            case NpcID.NIGHTMARE_TOTEM_1_CHARGED:
+            case NpcID.NIGHTMARE_TOTEM_2_CHARGED:
+            case NpcID.NIGHTMARE_TOTEM_3_CHARGED:
+            case NpcID.NIGHTMARE_TOTEM_4_CHARGED:
+                return true;
+            default:
+                return false;
         }
     }
 }
