@@ -13,9 +13,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class MetricsTrackerPanel extends PluginPanel
@@ -27,9 +25,8 @@ public class MetricsTrackerPanel extends PluginPanel
     private final JPanel overallPanel = new JPanel();
     private final JLabel monstersKilled = new JLabel( "Killed" );
     private final JLabel monstersPerHour = new JLabel( "Per hour" );
-    private final Map< MetricsManager, MetricsInfoBox > infoBoxes = new HashMap<>();
-    private List< MetricsManager > metrics = new ArrayList<>();
-    private MetricsManager overallMetrics = null;
+    private final Map< String, MetricsInfoBox > infoBoxes = new HashMap<>();
+    private final MetricsManager metricsManager = new MetricsManager();
     private MetricsTrackerConfig config;
     JComponent infoBoxPanel;
 
@@ -107,112 +104,64 @@ public class MetricsTrackerPanel extends PluginPanel
 
     public void addEvent( Event event )
     {
-        if ( this.overallMetrics == null )
+        metricsManager.addDataPoint( event );
+
+        if ( !infoBoxes.containsKey( event.getName() ) )
         {
-            this.overallMetrics = new MetricsManager( PANEL_KEY_STRING, event );
-        }
-        else
-        {
-            this.overallMetrics.addDataPoint( PANEL_KEY_STRING, event );
+            infoBoxes.put( event.getName(), new MetricsInfoBox( plugin, infoBoxPanel, event.getName() ) );
         }
 
-        boolean found = false;
-        for ( MetricsManager m : metrics )
-        {
-            if ( m.containsAnyKeyFrom( event.getInformation() ) )
-            {
-                found = true;
-                m.addDataPoint( event );
-                infoBoxes.get( m ).update( infoBoxPanel, m );
-            }
-        }
-
-        if ( !found )
-        {
-            addMetric(event);
-        }
-
+        infoBoxes.get( event.getName() ).update( infoBoxPanel, event.getName(), metricsManager.getCumulativeQuantity( event.getName() ), metricsManager.getQuantityPerHour( event.getName() ) );
         updateOverallTrackerText();
-    }
-
-    public void addMetric(Event event)
-    {
-        MetricsManager metric = new MetricsManager( event );
-        metrics.add( metric );
-        infoBoxes.put( metric, new MetricsInfoBox( plugin, infoBoxPanel, metric ) );
-        infoBoxes.get( metric ).update( infoBoxPanel, metric );
-
     }
 
     public void resetAllInfoBoxes()
     {
-        int sz = metrics.size() - 1;
-        if ( sz >= 0 )
-        {
-            for ( int i = sz; i >= 0; --i )
-            {
-                MetricsManager m = metrics.get( i );
-                if ( infoBoxes.containsKey( m ) )
-                {
-                    infoBoxes.get( m ).reset( infoBoxPanel );
-                    infoBoxes.remove( m );
-                }
+        metricsManager.resetAll();
 
-                m.reset();
-                metrics.remove( i );
-            }
+        for ( MetricsInfoBox box : infoBoxes.values() )
+        {
+            box.reset( infoBoxPanel );
         }
 
-        this.overallMetrics = new MetricsManager( PANEL_KEY_STRING );
+        infoBoxes.clear();
+
         monstersKilled.setText( "Total Killed:" );
         monstersPerHour.setText( "Total Per hour:" );
     }
 
-    public void removeInfoBox( MetricsManager metric )
+    public void removeInfoBox( String name )
     {
-        if ( infoBoxes.containsKey( metric ) )
+        if ( infoBoxes.containsKey( name ) )
         {
-            infoBoxes.get( metric ).reset( infoBoxPanel );
-            infoBoxes.remove( metric );
+            infoBoxes.get( name ).reset( infoBoxPanel );
+            infoBoxes.remove( name );
         }
 
-        if ( metrics.contains( metric ) )
-        {
-            metric.reset();
-            metrics.remove( metric );
-        }
+        metricsManager.reset( name );
     }
 
-    public void removeOthers( MetricsManager metric )
+    public void removeOthers( String name )
     {
-        int sz = metrics.size() - 1;
-
-        if ( sz > 0 )
+        int sz = infoBoxes.keySet().size() - 1;
+        if ( sz >= 0 )
         {
+            String keys[] = infoBoxes.keySet().toArray( new String[0] );
             for ( int i = sz; i >= 0; --i )
             {
-                MetricsManager m = metrics.get( i );
-                if ( metric == m )
+                if ( !( keys[ i ].equals( name ) ) )
                 {
-                    continue;
+                    removeInfoBox( keys[ i ] );
                 }
-
-                if ( infoBoxes.containsKey( m ) )
-                {
-                    infoBoxes.get( m ).reset( infoBoxPanel );
-                    infoBoxes.remove( m );
-                }
-
-                m.reset();
-                metrics.remove ( i );
             }
         }
+        metricsManager.resetOthers( name );
     }
 
     private void updateOverallTrackerText()
     {
-        final String killed = "Total Killed:" + overallMetrics.getCumulativeQuantity( PANEL_KEY_STRING );
-        final String kph = "Total Per hour:" + overallMetrics.getQuantityPerHour( PANEL_KEY_STRING );
+        final String killed = "Total Killed:" + metricsManager.getOverallCumulativeQuantity();
+        final String kph = "Total Per hour:" + metricsManager.getOverallPerHour();
 
         monstersKilled.setText( killed );
         monstersPerHour.setText( kph );

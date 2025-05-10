@@ -6,15 +6,14 @@ import net.runelite.api.NPC;
 import net.runelite.api.gameval.NpcID;
 import net.runelite.client.game.NpcUtil;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class DamageHandler
 {
     private int tickCounter = 0;
     private final int ticksToSelfDestruct = 100;
-    private HashMap<Actor, Event> eventsToValidate = new HashMap<>();
+    private HashMap< Actor, Event > eventsToValidate = new HashMap<>();
+
     public boolean isMonsterKilledEvent( Hitsplat hitsplat,  Actor actor, NpcUtil npcUtil )
     {
         if ( !( actor instanceof NPC ) )
@@ -39,16 +38,12 @@ public class DamageHandler
         return false;
     }
 
-    public void emitMonsterKilledEvent( Actor actor, EventConsumer consumer )
+    public void emitMonsterKilledEvent( Actor actor )
     {
-        Event.eventType eventType = Event.eventType.MONSTERS_KILLED;
-        List<String> info = new ArrayList<>();
-        info.add( actor.getName() );
-        Event event = new Event( eventType, info, 1 );
+        Event event = new Event( Event.eventType.MONSTERS_KILLED, actor.getName(), 1 );
         tickCounter = 0;
         eventsToValidate.put( actor, event );
     }
-
 
     public void tick( EventConsumer consumer, NpcUtil npcUtil )
     {

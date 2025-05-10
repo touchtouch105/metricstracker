@@ -2,12 +2,11 @@ package com.metricstracker;
 
 import lombok.Getter;
 
-import java.util.List;
-
 public class Event
 {
     enum eventType
     {
+        MASTER,
         NONE,
         ITEM_DROPS,
         XP_DROPS,
@@ -23,14 +22,21 @@ public class Event
     @Getter
     public eventType Type;
     @Getter
-    public List<String> Information;
+    public String name;
     @Getter
     public int Quantity;
 
-    public Event( eventType type, List<String> info, int quantity )
+    public Event( eventType type, String name, int quantity )
     {
         this.Type = type;
-        this.Information = info;
+        this.name = name;
         this.Quantity = quantity;
+    }
+
+    public Event( eventType type )
+    {
+        this.Type = type;
+        this.name = null;
+        this.Quantity = 0;
     }
 }

@@ -1,6 +1,5 @@
 package com.metricstracker;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
@@ -23,8 +22,8 @@ public class MetricsInfoBox extends JPanel
 	private static final EmptyBorder DEFAULT_PROGRESS_WRAPPER_BORDER = new EmptyBorder( 0, 7, 7, 7 );
 	private static final EmptyBorder COMPACT_PROGRESS_WRAPPER_BORDER = new EmptyBorder( 5, 1, 5, 5 );
 
-	@Getter( AccessLevel.PACKAGE )
-	private final MetricsManager metric;
+	@Getter
+	private final String name;
 	private final JPanel container = new JPanel();
 	private final JPanel headerPanel = new JPanel();
 	private final JPanel statsPanel = new JPanel();
@@ -36,9 +35,9 @@ public class MetricsInfoBox extends JPanel
 	private final JLabel bottomRightStat = new JLabel();
 	private JComponent panel;
 
-	MetricsInfoBox( MetricsTrackerPlugin plugin, JComponent panel, MetricsManager metric )
+	MetricsInfoBox( MetricsTrackerPlugin plugin, JComponent panel, String name  )
 	{
-		this.metric = metric;
+		this.name = name;
 		this.panel = panel;
 
 		setLayout( new BorderLayout() );
@@ -49,10 +48,10 @@ public class MetricsInfoBox extends JPanel
 
 		// Create reset menu
 		final JMenuItem reset = new JMenuItem( "Reset" );
-		reset.addActionListener( e -> plugin.resetSingleMetric( metric ) );
+		reset.addActionListener( e -> plugin.resetSingleMetric( name ) );
 
 		final JMenuItem resetOthers = new JMenuItem( "Reset Others" );
-		resetOthers.addActionListener( e -> plugin.resetOthers( metric ) );
+		resetOthers.addActionListener( e -> plugin.resetOthers( name ) );
 
 		final JPopupMenu popupMenu = new JPopupMenu();
 		popupMenu.setBorder( new EmptyBorder(5, 5, 5, 5) );
@@ -116,12 +115,12 @@ public class MetricsInfoBox extends JPanel
 		panel.revalidate();
 	}
 
-	void update( JComponent panel, MetricsManager metricsSnapshotSingle )
+	void update( JComponent panel, String name, long quantity, float qph )
 	{
-		SwingUtilities.invokeLater( () -> rebuildAsync( panel, metricsSnapshotSingle ) );
+		SwingUtilities.invokeLater( () -> rebuildAsync( panel, name, quantity, qph ) );
 	}
 
-	private void rebuildAsync( JComponent panel, MetricsManager metricsSnapshotSingle )
+	private void rebuildAsync( JComponent panel, String name, long quantity, float qph )
 	{
 		if ( getParent() != panel )
 		{
@@ -129,12 +128,9 @@ public class MetricsInfoBox extends JPanel
 			panel.revalidate();
 		}
 
-		String key = metricsSnapshotSingle.getLastEvent().getInformation().get( 0 );
-
-		topLeftStat.setText(htmlLabel( "Monster:",  key ) );
-		topRightStat.setText(htmlLabel( "Total Kills:",  metricsSnapshotSingle.getCumulativeQuantity( key ) ) );
-		bottomLeftStat.setText(htmlLabel( "Kills Per hour:",  metricsSnapshotSingle.getQuantityPerHour( key ) ) );
-
+		topLeftStat.setText(htmlLabel( "Monster:",  name ) );
+		topRightStat.setText(htmlLabel( "Total Kills:", quantity ) );
+		bottomLeftStat.setText(htmlLabel( "Kills Per hour:",  qph ) );
 	}
 
 	static String htmlLabel( String key, float value )

@@ -95,7 +95,7 @@ public class MetricsTrackerPlugin extends Plugin
         if ( damageHandler.isMonsterKilledEvent( hitsplat, actor, npcUtil )
         &&   config.monstersKilled() )
         {
-            damageHandler.emitMonsterKilledEvent( actor, consumer );
+            damageHandler.emitMonsterKilledEvent( actor );
         }
     }
 
@@ -104,13 +104,13 @@ public class MetricsTrackerPlugin extends Plugin
         loggerPanel.resetAllInfoBoxes();
     }
 
-    public void resetSingleMetric( MetricsManager metric )
+    public void resetSingleMetric( String name )
     {
-        loggerPanel.removeInfoBox( metric );
+        loggerPanel.removeInfoBox( name );
     }
 
-    void resetOthers( MetricsManager metric )
+    void resetOthers( String name )
     {
-        loggerPanel.removeOthers( metric );
+        loggerPanel.removeOthers( name );
     }
 }

@@ -1,145 +1,184 @@
 package com.metricstracker;
 
-import lombok.Getter;
-
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 
 public class MetricsManager
 {
+    private final static String overallKey = "OVERALL_KEY";
     private final static float MSEC_PER_SEC = 1000;
-    private final static float MSEC_PER_MIN = 60 * MSEC_PER_SEC;
-    private final String MasterKey;
-    @Getter
-    public Event lastEvent;
-    private long startTime;
-    private HashMap< String, Long > keyQuantities;
+    private final static float SEC_PER_MIN = 60;
+    private final static float MIN_PER_HOUR = 60;
+    public HashMap< String, Event > lastEvent;
+    private HashMap< String, Long > startTimes;
+    private HashMap< String, Long > quantities;
 
-    public MetricsManager( Event event )
+    public MetricsManager()
     {
-        this.startTime = 0;
-        this.keyQuantities = new HashMap<>();
-        this.lastEvent = null;
-        this.MasterKey = null;
-        addDataPoint( event );
-    }
+        this.lastEvent = new HashMap<>();
+        this.startTimes = new HashMap<>();
+        this.quantities = new HashMap<>();
 
-    public MetricsManager( String masterKey, Event event )
-    {
-        this.startTime = Instant.now().toEpochMilli();
-        this.MasterKey = masterKey;
-        this.keyQuantities = new HashMap<>();
-        this.keyQuantities.put( masterKey, (long) 0 );
-        this.lastEvent = null;
-        addDataPoint( masterKey, event );
-    }
-
-    public MetricsManager( String masterKey )
-    {
-        this.startTime = Instant.now().toEpochMilli();
-        this.MasterKey = masterKey;
-        this.keyQuantities = new HashMap<>();
-        this.keyQuantities.put( masterKey, (long) 0 );
-        this.lastEvent = null;
-    }
-
-    public void addDataPoint( String key, Event event )
-    {
-        if ( !key.equals( MasterKey ) )
-        {
-            return;
-        }
-
-        if ( this.startTime == 0 )
-        {
-            this.startTime = Instant.now().toEpochMilli();
-        }
-        this.lastEvent = event;
-        long quantity = 0;
-        if ( this.keyQuantities.containsKey( key ) )
-        {
-            quantity = this.keyQuantities.get( key );
-        }
-
-        quantity += event.getQuantity();
-        this.keyQuantities.put( key, quantity);
+        this.lastEvent.put( overallKey, new Event( Event.eventType.MASTER ) );
+        this.quantities.put( overallKey, ( long ) 0 );
     }
 
     public void addDataPoint( Event event )
     {
-        if ( this.startTime == 0 )
+        String key = event.getName();
+
+        if ( !this.startTimes.containsKey( key ) )
         {
-            this.startTime = Instant.now().toEpochMilli();
+            this.startTimes.put( key, Instant.now().toEpochMilli() );
         }
-        this.lastEvent = event;
 
-        for ( String s : event.getInformation() )
+        if ( !this.startTimes.containsKey( overallKey ) )
         {
-            long quantity = 0;
-
-            if ( this.keyQuantities.containsKey( s ) )
-            {
-                quantity = this.keyQuantities.get( s );
-            }
-
-            quantity += event.getQuantity();
-            this.keyQuantities.put( s, quantity );
+            this.startTimes.put( overallKey, Instant.now().toEpochMilli() );
         }
-    }
 
-    public float getRunTimeSeconds()
-    {
-        long now = Instant.now().toEpochMilli();
-        return ( ( now - this.startTime ) / MSEC_PER_SEC );
-    }
+        this.lastEvent.put( key, event );
+        this.lastEvent.put( overallKey, event );
 
-    public float getRunTimeMinutes()
-    {
-        long now = Instant.now().toEpochMilli();
-        return ( ( now - this.startTime ) / MSEC_PER_MIN );
+        long quantity = 0;
+        if ( this.quantities.containsKey( key ) )
+        {
+            quantity = this.quantities.get( key );
+        }
+
+        quantity += event.getQuantity();
+        this.quantities.put( key, quantity );
+
+        quantity = this.quantities.get( overallKey ) + event.getQuantity();
+        this.quantities.put( overallKey, quantity );
     }
 
     public float getQuantityPerHour( String key )
     {
         float qph = 0;
-        float runTime = getRunTimeSeconds();
+        float runTime = 0;
 
-        if ( this.keyQuantities.containsKey( key ) )
+        if ( this.startTimes.containsKey( key ) )
         {
-            if ( runTime <= 1 )
+            runTime = Instant.now().toEpochMilli() - this.startTimes.get( key );
+            runTime /= MSEC_PER_SEC;
+            runTime /= SEC_PER_MIN;
+            runTime /= MIN_PER_HOUR;
+
+        }
+
+        if ( this.quantities.containsKey( key ) )
+        {
+            qph = this.quantities.get( key );
+
+            if ( runTime == 0 )
             {
-                return this.keyQuantities.get( key );
+                return ( this.quantities.get( key ) );
             }
 
-            qph = this.keyQuantities.get( key );
-            qph /= getRunTimeSeconds();
-            qph *= 3600;
+            qph /= runTime;
         }
+
         return qph;
     }
 
-    public boolean containsAnyKeyFrom( List< String > key )
+    public float getOverallPerHour()
     {
-        for ( String s : key )
+        float qph = 0;
+        float runTime = 0;
+        String key = overallKey;
+
+        if ( this.startTimes.containsKey( key ) )
         {
-            if ( this.keyQuantities.containsKey( s ) )
-            {
-                return true;
-            }
+            runTime = Instant.now().toEpochMilli() - this.startTimes.get( key );
+            runTime /= MSEC_PER_SEC;
+            runTime /= SEC_PER_MIN;
+            runTime /= MIN_PER_HOUR;
+
         }
 
-        return false;
+        if ( this.quantities.containsKey( key ) )
+        {
+            qph = this.quantities.get( key );
+
+            if ( runTime == 0 )
+            {
+                return ( this.quantities.get( key ) );
+            }
+
+            qph /= runTime;
+        }
+
+        return qph;
     }
 
     public long getCumulativeQuantity( String key )
     {
-        return this.keyQuantities.get( key );
+        if ( !this.quantities.containsKey( key ) )
+        {
+            return 0;
+        }
+        return this.quantities.get( key );
     }
 
-    public void reset()
+    public long getOverallCumulativeQuantity()
     {
-        this.keyQuantities.clear();
-        this.startTime = 0;
+        String key = overallKey;
+        if ( !this.quantities.containsKey( key ) )
+        {
+            return 0;
+        }
+        return this.quantities.get( key );
     }
+
+    public void reset( String key )
+    {
+        if ( this.quantities.containsKey( key ) )
+        {
+            this.quantities.remove( key );
+        }
+
+        if ( this.startTimes.containsKey( key ) )
+        {
+            this.startTimes.remove( key );
+        }
+
+        if ( this.lastEvent.containsKey( key ) )
+        {
+            this.lastEvent.remove( key );
+        }
+    }
+
+    public void resetOthers( String key )
+    {
+        int sz = this.quantities.keySet().size() - 1;
+
+        if ( sz >= 0 )
+        {
+            String keys[] = this.quantities.keySet().toArray( new String[0] );
+            for ( int i = sz; i >=0; --i )
+            {
+                if ( !( key.equals( keys[ i ] ) )
+                &&   !( keys[ i ].equals( overallKey ) ) )
+                {
+                    reset( keys[ i ] );
+                }
+            }
+        }
+    }
+
+    public void resetAll()
+    {
+        this.quantities.clear();
+        this.startTimes.clear();
+        this.lastEvent.clear();
+
+        this.lastEvent = new HashMap<>();
+        this.startTimes = new HashMap<>();
+        this.quantities = new HashMap<>();
+
+        this.lastEvent.put( overallKey, new Event( Event.eventType.MASTER ) );
+        this.quantities.put( overallKey, ( long ) 0 );
+    }
+
 }
