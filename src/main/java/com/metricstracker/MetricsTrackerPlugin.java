@@ -47,13 +47,14 @@ public class MetricsTrackerPlugin extends Plugin
     private final DamageHandler damageHandler = new DamageHandler();
     private MetricsTrackerPanel loggerPanel;
     private EventConsumer consumer;
+    private NavigationButton navigationButton;
 
     @Override
     protected void startUp() throws Exception
     {
          loggerPanel = new MetricsTrackerPanel( this , config, client );
          final BufferedImage icon = ImageUtil.loadImageResource( getClass(), ICON_FILE );
-         NavigationButton navigationButton = NavigationButton.builder()
+         navigationButton = NavigationButton.builder()
             .tooltip( PLUGIN_NAME )
             .icon( icon )
             .priority( 6 )
@@ -61,6 +62,13 @@ public class MetricsTrackerPlugin extends Plugin
             .build();
         clientToolbar.addNavigation( navigationButton );
         consumer = new EventConsumer( loggerPanel );
+    }
+
+    @Override
+    protected void shutDown() throws Exception
+    {
+        resetState();
+        clientToolbar.removeNavigation( navigationButton );
     }
 
     @Provides
