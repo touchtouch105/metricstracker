@@ -14,7 +14,7 @@ public class DamageHandler
     private final int ticksToSelfDestruct = 100;
     private HashMap< Actor, Event > eventsToValidate = new HashMap<>();
 
-    public boolean isMonsterKilledEvent( Hitsplat hitsplat,  Actor actor, NpcUtil npcUtil )
+    public boolean isMonsterKilledEvent( Hitsplat hitsplat, Actor actor, NpcUtil npcUtil )
     {
         if ( !( actor instanceof NPC ) )
         {
@@ -45,15 +45,21 @@ public class DamageHandler
         eventsToValidate.put( actor, event );
     }
 
+    public void emitDamageDoneEvent( Actor actor, Hitsplat hitsplat, EventConsumer consumer )
+    {
+        Event event = new Event( Event.eventType.DAMAGE_DEALT, actor.getName(), hitsplat.getAmount() );
+        consumer.addPendingEvent( event );
+    }
+
     public void tick( EventConsumer consumer, NpcUtil npcUtil )
     {
         int sz = eventsToValidate.keySet().size() - 1;
         if ( sz >= 0 )
         {
-            Actor actors[] = eventsToValidate.keySet().toArray( new Actor[0] );
+            Actor actors[] = eventsToValidate.keySet().toArray( new Actor[ 0 ] );
             for ( int i = sz; i >= 0; --i )
             {
-                Actor actor = actors[i];
+                Actor actor = actors[ i ];
 
                 if ( isActorDead( actor, npcUtil ) )
                 {
@@ -61,6 +67,7 @@ public class DamageHandler
                     eventsToValidate.remove( actor );
                 }
             }
+
             // Delete lists after a minute of inactivity to avoid any memory leaks
             tickCounter++;
             if ( tickCounter == ticksToSelfDestruct )
@@ -79,6 +86,7 @@ public class DamageHandler
         {
             return true;
         }
+
         return false;
     }
 
