@@ -15,8 +15,8 @@ public class EventConsumer
 
     public void consumePendingEvents()
     {
-        int sz = pendingEvents.size();
-        for ( int i = sz - 1; i >= 0; --i )
+        int sz = pendingEvents.size() - 1;
+        for ( int i = sz; i >= 0; --i )
         {
             Event event = pendingEvents.get( i );
             panel.addEvent( event );

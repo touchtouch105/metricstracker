@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.Hitsplat;
+import net.runelite.api.NPC;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.client.callback.ClientThread;
@@ -48,11 +49,12 @@ public class MetricsTrackerPlugin extends Plugin
     private MetricsTrackerPanel loggerPanel;
     private EventConsumer consumer;
     private NavigationButton navigationButton;
+    private int tickCounter = 0;
 
     @Override
     protected void startUp() throws Exception
     {
-         loggerPanel = new MetricsTrackerPanel( this , config, client );
+         loggerPanel = new MetricsTrackerPanel( this, client );
          final BufferedImage icon = ImageUtil.loadImageResource( getClass(), ICON_FILE );
          navigationButton = NavigationButton.builder()
             .tooltip( PLUGIN_NAME )
@@ -80,9 +82,13 @@ public class MetricsTrackerPlugin extends Plugin
     @Subscribe
     public void onGameTick( GameTick gameTick )
     {
-        if ( !config.monstersKilled() )
+        if ( config.refreshRate() > 0 )
         {
-            return;
+            tickCounter = ( tickCounter + 1 ) % config.refreshRate();
+            if ( tickCounter == 0 )
+            {
+                loggerPanel.refreshActive();
+            }
         }
 
         damageHandler.tick( consumer, npcUtil );
@@ -92,16 +98,17 @@ public class MetricsTrackerPlugin extends Plugin
     @Subscribe
     public void onHitsplatApplied( HitsplatApplied event )
     {
-        if ( !config.monstersKilled() )
-        {
-            return;
-        }
 
         Actor actor = event.getActor();
         Hitsplat hitsplat = event.getHitsplat();
 
-        if ( damageHandler.isMonsterKilledEvent( hitsplat, actor, npcUtil )
-        &&   config.monstersKilled() )
+        if ( hitsplat.isMine()
+        && ( actor instanceof NPC) )
+        {
+            damageHandler.emitDamageDoneEvent( actor, hitsplat, consumer );
+        }
+
+        if ( damageHandler.isMonsterKilledEvent( hitsplat, actor, npcUtil ) )
         {
             damageHandler.emitMonsterKilledEvent( actor );
         }
@@ -112,13 +119,13 @@ public class MetricsTrackerPlugin extends Plugin
         loggerPanel.resetAllInfoBoxes();
     }
 
-    public void resetSingleMetric( String name )
+    public void resetSingleMetric( MetricsInfoBox.infoBoxType type, String name )
     {
-        loggerPanel.removeInfoBox( name );
+        loggerPanel.removeInfoBox( type, name );
     }
 
-    void resetOthers( String name )
+    void resetOthers( MetricsInfoBox.infoBoxType type, String name )
     {
-        loggerPanel.removeOthers( name );
+        loggerPanel.removeOthers( type, name );
     }
 }

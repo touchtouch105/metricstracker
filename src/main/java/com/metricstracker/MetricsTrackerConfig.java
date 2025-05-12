@@ -6,11 +6,10 @@ import net.runelite.client.config.*;
 public interface MetricsTrackerConfig extends Config
 {
     @ConfigItem(
-            keyName = "monstersKilled",
-            name = "NPC Kill Tracker",
-            description = "Enable the npc kill metrics tracker",
+            keyName = "refreshRate",
+            name = "Passive Refresh Rate",
+            description = "Number of ticks per passive refresh, 0 to disable",
             position = 1
     )
-    default boolean monstersKilled() { return true; }
-
+    default int refreshRate() { return 5; }
 }
