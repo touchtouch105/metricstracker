@@ -2,20 +2,14 @@ package com.metricstracker;
 
 import lombok.Getter;
 
-public class Event
+public class MetricEvent
 {
     enum eventType
     {
         MASTER,
         NONE,
-        ITEM_DROPS,
-        XP_DROPS,
-        LVLS_GAINED,
         MONSTERS_KILLED,
-        DAMAGE_DEALT,
-        DAMAGE_TAKEN,
-        RESOURCES_GATHERED,
-        CHAT_MESSAGES
+        DAMAGE_DEALT
     }
 
     // Type of the data point being created
@@ -26,14 +20,14 @@ public class Event
     @Getter
     public int quantity;
 
-    public Event( eventType type, String name, int quantity )
+    public MetricEvent(eventType type, String name, int quantity )
     {
         this.type = type;
         this.name = name;
         this.quantity = quantity;
     }
 
-    public Event( eventType type )
+    public MetricEvent(eventType type )
     {
         this.type = type;
         this.name = null;

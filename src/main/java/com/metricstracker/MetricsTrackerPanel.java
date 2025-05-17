@@ -86,37 +86,37 @@ public class MetricsTrackerPanel extends PluginPanel
         layoutPanel.add( infoBoxPanel );
     }
 
-    public void addEvent( Event event )
+    public void addEvent( MetricEvent metricEvent )
     {
-        MetricsInfoBox.infoBoxType type = getInfoBoxType( event.getType() );
-        String eventOriginalName = event.getName();
+        MetricsInfoBox.infoBoxType type = getInfoBoxType( metricEvent.getType() );
+        String eventOriginalName = metricEvent.getName();
         boolean isSecondaryMetric = false;
 
-        if ( event.getType() == Event.eventType.DAMAGE_DEALT )
+        if ( metricEvent.getType() == MetricEvent.eventType.DAMAGE_DEALT )
         {
             isSecondaryMetric = true;
-            event.name = ( "DPS_" + eventOriginalName );
+            metricEvent.name = ( "DPS_" + eventOriginalName );
         }
 
         if ( metrics.containsKey( type ) )
         {
-            metrics.get( type ).addDataPoint( event, isSecondaryMetric, eventOriginalName );
+            metrics.get( type ).addDataPoint(metricEvent, isSecondaryMetric, eventOriginalName );
         }
         else
         {
             metrics.put( type, new MetricsManager() );
-            metrics.get( type ).addDataPoint( event, isSecondaryMetric, eventOriginalName );
+            metrics.get( type ).addDataPoint(metricEvent, isSecondaryMetric, eventOriginalName );
         }
 
         if ( type == currentDisplayType )
         {
-            updateInfoBox( type, event, eventOriginalName );
+            updateInfoBox( type, metricEvent, eventOriginalName );
         }
 
         updateOverallTrackerText();
     }
 
-    private void updateInfoBox( MetricsInfoBox.infoBoxType type, Event event, String eventOriginalName )
+    private void updateInfoBox( MetricsInfoBox.infoBoxType type, MetricEvent metricEvent, String eventOriginalName )
     {
         Map< String, MetricsInfoBox > map;
         MetricsManager metric;
@@ -140,14 +140,14 @@ public class MetricsTrackerPanel extends PluginPanel
         MetricsInfoBox infoBox = infoBoxes.get( type ).get( eventOriginalName );
 
         if ( type == MetricsInfoBox.infoBoxType.MONSTERS
-        &&   event.getType() == Event.eventType.DAMAGE_DEALT )
+        &&   metricEvent.getType() == MetricEvent.eventType.DAMAGE_DEALT )
         {
             infoBox.update( infoBoxPanel,
                             eventOriginalName,
                             metric.getCumulativeQuantity( eventOriginalName ),
                             metric.getQuantityPerHour( eventOriginalName ),
-                            metric.getCumulativeQuantity( event.getName() ),
-                            metric.getQuantityPerSecond( event.getName() ) );
+                            metric.getCumulativeQuantity( metricEvent.getName() ),
+                            metric.getQuantityPerSecond( metricEvent.getName() ) );
         }
         else
         {
@@ -158,7 +158,7 @@ public class MetricsTrackerPanel extends PluginPanel
         }
     }
 
-    private MetricsInfoBox.infoBoxType getInfoBoxType( Event.eventType eventType )
+    private MetricsInfoBox.infoBoxType getInfoBoxType( MetricEvent.eventType eventType )
     {
         MetricsInfoBox.infoBoxType type = MetricsInfoBox.infoBoxType.NONE;
         switch ( eventType )
@@ -167,7 +167,6 @@ public class MetricsTrackerPanel extends PluginPanel
             case DAMAGE_DEALT:
                 type = MetricsInfoBox.infoBoxType.MONSTERS;
                 break;
-
             default:
                 break;
         }
@@ -247,24 +246,29 @@ public class MetricsTrackerPanel extends PluginPanel
         String altQ;
         String altR;
 
-        if ( !metrics.containsKey( currentDisplayType ) )
-        {
-            totalQuantity.setText( "Killed:" );
-            totalRate.setText( "KPH:" );
-            altQuantity.setText( "Damage:" );
-            altRate.setText( "DPS:" );
-            return;
-        }
-
         switch ( currentDisplayType )
         {
             case MONSTERS:
             default:
-                quantity = "Killed:" + metrics.get( currentDisplayType ).getOverallCumulativeQuantity( false );
-                rate = "KPH:" + metrics.get( currentDisplayType ).getOverallPerHour( false );
-                altQ = "Damage:" + metrics.get( currentDisplayType ).getOverallCumulativeQuantity( true );
-                altR = "DPS:" + metrics.get( currentDisplayType ).getOverallPerSecond( true );
+                quantity = "Killed:";
+                rate = "KPH:";
+                altQ = "Damage:";
+                altR = "DPS:";
                 break;
+        }
+
+        if ( metrics.containsKey( currentDisplayType ) )
+        {
+            switch ( currentDisplayType )
+            {
+                case MONSTERS:
+                default:
+                    quantity += metrics.get( currentDisplayType ).getOverallCumulativeQuantity( false );
+                    rate += metrics.get( currentDisplayType ).getOverallPerHour( false );
+                    altQ += metrics.get( currentDisplayType ).getOverallCumulativeQuantity( true );
+                    altR += metrics.get( currentDisplayType ).getOverallPerSecond( true );
+                    break;
+            }
         }
 
         totalQuantity.setText( quantity );
@@ -275,7 +279,7 @@ public class MetricsTrackerPanel extends PluginPanel
 
     public void refreshActive()
     {
-        Event event;
+        MetricEvent metricEvent;
         String infoBoxKey;
         for ( MetricsInfoBox.infoBoxType type : metrics.keySet() )
         {
@@ -284,14 +288,29 @@ public class MetricsTrackerPanel extends PluginPanel
                 for ( String key : metrics.get( type ).getKeys() )
                 {
                     infoBoxKey = metrics.get( type ).getMetricKey( key );
-                    event = metrics.get( type ).lastEvent.get( key );
-                    event.quantity = 0;
+                    metricEvent = metrics.get( type ).lastEvent.get( key );
+                    metricEvent.quantity = 0;
 
-                    updateInfoBox( type, event, infoBoxKey );
+                    updateInfoBox( type, metricEvent, infoBoxKey );
                 }
             }
         }
 
         updateOverallTrackerText();
+    }
+
+    public void loadInfoBoxes( MetricsInfoBox.infoBoxType type )
+    {
+        currentDisplayType = type;
+
+        for ( MetricsInfoBox.infoBoxType t : infoBoxes.keySet() )
+        {
+            for ( String name : infoBoxes.get( t ).keySet() )
+            {
+                infoBoxes.get( t ).get( name ).reset( infoBoxPanel );
+            }
+        }
+
+        refreshActive();
     }
 }

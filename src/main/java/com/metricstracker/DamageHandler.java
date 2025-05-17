@@ -3,7 +3,10 @@ package com.metricstracker;
 import net.runelite.api.Actor;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.NPC;
+import net.runelite.api.events.HitsplatApplied;
+import net.runelite.api.gameval.AnimationID;
 import net.runelite.api.gameval.NpcID;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.game.NpcUtil;
 
 import java.util.HashMap;
@@ -12,16 +15,65 @@ public class DamageHandler
 {
     private int tickCounter = 0;
     private final int ticksToSelfDestruct = 100;
-    private HashMap< Actor, Event > eventsToValidate = new HashMap<>();
+    private HashMap< Actor, MetricEvent > eventsToValidate = new HashMap<>();
 
-    public boolean isMonsterKilledEvent( Hitsplat hitsplat, Actor actor, NpcUtil npcUtil )
+    public void hitsplatApplied( HitsplatApplied hitsplatApplied, NpcUtil npcUtil, EventBus eventBus )
+    {
+        Actor actor = hitsplatApplied.getActor();
+        Hitsplat hitsplat = hitsplatApplied.getHitsplat();
+
+        if ( hitsplat.isMine()
+        && ( actor instanceof NPC) )
+        {
+            emitDamageDoneEvent( actor, hitsplat, eventBus );
+        }
+
+        if ( isMonsterKilledEvent( hitsplat, actor, npcUtil ) )
+        {
+            emitMonsterKilledEvent( actor );
+        }
+    }
+
+    public void emitAnimationChange( Actor actor, EventBus eventBus )
+    {
+        if ( !( actor instanceof NPC ) )
+        {
+            return;
+        }
+
+        if ( eventsToValidate.containsKey( actor ) )
+        {
+            NPC npc = ( NPC ) actor;
+            if ( npc.getId() == NpcID.YAMA_VOIDFLARE )
+            {
+                int animation = npc.getAnimation();
+
+                switch ( animation )
+                {
+                    case AnimationID.NPC_VOIDFLARE_EXPLODE:
+                        eventsToValidate.remove( actor );
+                        break;
+                    case AnimationID.NPC_VOIDFLARE_DEATH:
+                        eventBus.post( actor );
+                        eventsToValidate.remove( actor );
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    private boolean isMonsterKilledEvent( Hitsplat hitsplat, Actor actor, NpcUtil npcUtil )
     {
         if ( !( actor instanceof NPC ) )
         {
             return false;
         }
+        NPC npc = ( NPC ) actor;
 
-        if ( hitsplat.isMine() )
+        if ( hitsplat.isMine()
+        &&   hitsplat.getAmount() > 0 )
         {
             // Start tracking the mob after the player deals damage below 50% hp
             if ( actor.getHealthRatio() <= 0 || ( actor.getHealthRatio() <= actor.getHealthScale() / 2 )  )
@@ -32,26 +84,35 @@ public class DamageHandler
             if ( npcUtil.isDying( ( NPC ) actor) )
             {
                 return true;
-            };
+            }
+
+            // Special cases that need to be added manually due to healthratio not updating
+            switch ( npc.getId() )
+            {
+                case NpcID.YAMA_VOIDFLARE:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         return false;
     }
 
-    public void emitMonsterKilledEvent( Actor actor )
+    private void emitMonsterKilledEvent( Actor actor )
     {
-        Event event = new Event( Event.eventType.MONSTERS_KILLED, actor.getName(), 1 );
+        MetricEvent metricEvent = new MetricEvent( MetricEvent.eventType.MONSTERS_KILLED, actor.getName(), 1 );
         tickCounter = 0;
-        eventsToValidate.put( actor, event );
+        eventsToValidate.put( actor, metricEvent);
     }
 
-    public void emitDamageDoneEvent( Actor actor, Hitsplat hitsplat, EventConsumer consumer )
+    private void emitDamageDoneEvent( Actor actor, Hitsplat hitsplat, EventBus eventBus )
     {
-        Event event = new Event( Event.eventType.DAMAGE_DEALT, actor.getName(), hitsplat.getAmount() );
-        consumer.addPendingEvent( event );
+        MetricEvent metricEvent = new MetricEvent( MetricEvent.eventType.DAMAGE_DEALT, actor.getName(), hitsplat.getAmount() );
+        eventBus.post( metricEvent );
     }
 
-    public void tick( EventConsumer consumer, NpcUtil npcUtil )
+    public void tick( NpcUtil npcUtil, EventBus eventBus )
     {
         int sz = eventsToValidate.keySet().size() - 1;
         if ( sz >= 0 )
@@ -63,7 +124,7 @@ public class DamageHandler
 
                 if ( isActorDead( actor, npcUtil ) )
                 {
-                    consumer.addPendingEvent( eventsToValidate.get( actor ) );
+                    eventBus.post( eventsToValidate.get( actor ) );
                     eventsToValidate.remove( actor );
                 }
             }
@@ -96,6 +157,9 @@ public class DamageHandler
 
         switch ( id )
         {
+            case NpcID.YAMA:
+            case NpcID.YAMA_JUDGE_OF_YAMA:
+                return npc.getHealthRatio() == 0;
             case NpcID.NIGHTMARE_TOTEM_1_CHARGED:
             case NpcID.NIGHTMARE_TOTEM_2_CHARGED:
             case NpcID.NIGHTMARE_TOTEM_3_CHARGED:
