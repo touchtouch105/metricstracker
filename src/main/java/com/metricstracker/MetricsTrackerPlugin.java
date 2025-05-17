@@ -2,24 +2,31 @@ package com.metricstracker;
 
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
+
 import net.runelite.api.Client;
+import net.runelite.api.NPC;
+import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
+
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.NpcUtil;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.loottracker.LootReceived;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @PluginDescriptor(
@@ -42,16 +49,15 @@ public class MetricsTrackerPlugin extends Plugin
     private MetricsTrackerConfig config;
     @Inject
     private ClientToolbar clientToolbar;
-    @Inject
-    private ItemManager itemManager;
+
     private static final String ICON_FILE = "/metrics_tracker_icon.png";
     private static final String PLUGIN_NAME = "Metrics Tracker";
     private final DamageHandler damageHandler = new DamageHandler();
-    private final LootHandler lootHandler = new LootHandler();
     private MetricsTrackerPanel loggerPanel;
     private NavigationButton navigationButton;
     private int tickCounter = 0;
-    private boolean lootInvalid = false;
+    private List< String > blacklist = new ArrayList<>();
+    private static boolean bUpdateConfig = false;
 
     @Override
     protected void startUp() throws Exception
@@ -59,12 +65,14 @@ public class MetricsTrackerPlugin extends Plugin
          loggerPanel = new MetricsTrackerPanel( this, client );
          final BufferedImage icon = ImageUtil.loadImageResource( getClass(), ICON_FILE );
          navigationButton = NavigationButton.builder()
-            .tooltip( PLUGIN_NAME )
-            .icon( icon )
-            .priority( 6 )
-            .panel( loggerPanel )
-            .build();
+											.tooltip( PLUGIN_NAME )
+											.icon( icon )
+											.priority( 6 )
+											.panel( loggerPanel )
+											.build();
         clientToolbar.addNavigation( navigationButton );
+
+        blacklist = Text.fromCSV( config.blacklistedNPCs().toLowerCase() );
     }
 
     @Override
@@ -81,20 +89,32 @@ public class MetricsTrackerPlugin extends Plugin
     }
 
     @Subscribe
-    public void onLootReceived( final LootReceived lootReceived )
+    public void onConfigChanged( ConfigChanged configChanged )
     {
-        lootHandler.lootReceived( lootReceived, itemManager, eventBus );
+        if ( configChanged.getKey().equals( "blacklistedNPCs" ) )
+        {
+            blacklist = Text.fromCSV( config.blacklistedNPCs() );
+        }
     }
 
     @Subscribe
     public void onMetricEvent( MetricEvent metricEvent )
     {
-        loggerPanel.addEvent( metricEvent );
+        if ( !( blacklist.contains( metricEvent.getName().toLowerCase() ) ) )
+        {
+            loggerPanel.addEvent( metricEvent );
+        }
     }
 
     @Subscribe
     public void onGameTick( GameTick gameTick )
     {
+        if ( bUpdateConfig )
+        {
+            blacklist = Text.fromCSV( config.blacklistedNPCs().toLowerCase() );
+            bUpdateConfig = false;
+        }
+        
         if ( config.refreshRate() > 0 )
         {
             tickCounter = ( tickCounter + 1 ) % config.refreshRate();
@@ -105,6 +125,15 @@ public class MetricsTrackerPlugin extends Plugin
         }
 
         damageHandler.tick( npcUtil, eventBus );
+    }
+
+    @Subscribe
+    public void onAnimationChanged( AnimationChanged animationChanged )
+    {
+        if ( animationChanged.getActor() instanceof NPC )
+        {
+            damageHandler.emitAnimationChange( animationChanged.getActor(), eventBus );
+        }
     }
 
     @Subscribe
@@ -127,4 +156,20 @@ public class MetricsTrackerPlugin extends Plugin
     {
         loggerPanel.removeOthers( type, name );
     }
+
+    void blacklistNPC( MetricsInfoBox.infoBoxType type, String npcName )
+    {
+        List< String > vals = new ArrayList<>();
+        vals.addAll( Text.fromCSV( configManager.getConfiguration( "metricstracker", "blacklistedNPCs" ) ) );
+
+        if ( !vals.contains( npcName ) )
+        {
+            vals.add( npcName );
+            configManager.setConfiguration( "metricstracker", "blacklistedNPCs", Text.toCSV( vals ) );
+            bUpdateConfig = true;
+        }
+
+        resetSingleMetric( type, npcName );
+    }
 }
+

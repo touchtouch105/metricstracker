@@ -16,8 +16,7 @@ public class MetricsInfoBox extends JPanel
 	public enum infoBoxType
 	{
 		NONE,
-		MONSTERS,
-		LOOT
+		MONSTERS
 	}
 
 	private enum textLocation
@@ -45,26 +44,18 @@ public class MetricsInfoBox extends JPanel
 	private final JLabel bottomLeftStat = new JLabel();
 	private final JLabel topRightStat = new JLabel();
 	private final JLabel bottomRightStat = new JLabel();
-	private JComponent panel;
-	private infoBoxType type = infoBoxType.NONE;
 	private final String[] displayText;
 	private final String errorDisplayText[] = { "", "Quantity:", "Per Hour:", "Alt Quantity:", "Per Hour:" };
 	private final String monsterDisplayText[] = { "", "Killed:", "KPH:", "Damage:", "DPS:" };
-	private final String lootDisplayText[] = { "", "Drops:", "Per Hour", "Value:", "GP/H:" };
 
 	MetricsInfoBox( MetricsTrackerPlugin plugin, JComponent panel, String name, infoBoxType type )
 	{
 		this.name = name;
-		this.panel = panel;
-		this.type = type;
 
 		switch ( type )
 		{
 			case MONSTERS:
 				this.displayText = monsterDisplayText;
-				break;
-			case LOOT:
-				this.displayText = lootDisplayText;
 				break;
 			default:
 				this.displayText = errorDisplayText;
@@ -84,11 +75,14 @@ public class MetricsInfoBox extends JPanel
 		final JMenuItem resetOthers = new JMenuItem( "Reset Others" );
 		resetOthers.addActionListener( e -> plugin.resetOthers( type, name ) );
 
+		final JMenuItem blacklistEntry = new JMenuItem( "Blacklist NPC" );
+		blacklistEntry.addActionListener( e -> plugin.blacklistNPC( type, name ) );
 		final JPopupMenu popupMenu = new JPopupMenu();
 		popupMenu.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
 
 		popupMenu.add( reset );
 		popupMenu.add( resetOthers );
+		popupMenu.add( blacklistEntry );
 
 		headerPanel.setBackground( ColorScheme.DARKER_GRAY_COLOR );
 		headerPanel.setLayout( new DynamicGridLayout( 2, 1,0, -7 ) );

@@ -8,15 +8,8 @@ public class MetricEvent
     {
         MASTER,
         NONE,
-        ITEM_DROPS,
-        ITEM_GP_EARNED,
-        XP_DROPS,
-        LVLS_GAINED,
         MONSTERS_KILLED,
-        DAMAGE_DEALT,
-        DAMAGE_TAKEN,
-        RESOURCES_GATHERED,
-        CHAT_MESSAGES
+        DAMAGE_DEALT
     }
 
     // Type of the data point being created
