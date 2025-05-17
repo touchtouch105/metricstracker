@@ -15,7 +15,8 @@ public class MetricsManager
     private final static float MSEC_PER_SEC = 1000;
     private final static float SEC_PER_MIN = 60;
     private final static float MIN_PER_HOUR = 60;
-    public HashMap< String, MetricEvent> lastEvent;
+  
+    public HashMap< String, MetricEvent > lastEvent;
     private HashMap< String, Long > startTimes;
     private HashMap< String, Long > quantities;
     private HashMap< String, String > remappedMetrics;
