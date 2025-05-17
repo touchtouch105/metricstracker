@@ -19,6 +19,16 @@ public class MetricsInfoBox extends JPanel
 		MONSTERS
 	}
 
+	private enum textLocation
+	{
+		NAME,
+		TOP_LEFT,
+		TOP_RIGHT,
+		BOTTOM_LEFT,
+		BOTTOM_RIGHT,
+		NUM_TEXT_LOCATIONS
+	}
+
 	private static final String HTML_LABEL_TEMPLATE =
 		"<html><body style='color:%s'>%s<span style='color:white'>%s</span></body></html>";
 
@@ -34,14 +44,23 @@ public class MetricsInfoBox extends JPanel
 	private final JLabel bottomLeftStat = new JLabel();
 	private final JLabel topRightStat = new JLabel();
 	private final JLabel bottomRightStat = new JLabel();
-	private JComponent panel;
-	private infoBoxType type = infoBoxType.NONE;
+	private final String[] displayText;
+	private final String errorDisplayText[] = { "", "Quantity:", "Per Hour:", "Alt Quantity:", "Per Hour:" };
+	private final String monsterDisplayText[] = { "", "Killed:", "KPH:", "Damage:", "DPS:" };
 
 	MetricsInfoBox( MetricsTrackerPlugin plugin, JComponent panel, String name, infoBoxType type )
 	{
 		this.name = name;
-		this.panel = panel;
-		this.type = type;
+
+		switch ( type )
+		{
+			case MONSTERS:
+				this.displayText = monsterDisplayText;
+				break;
+			default:
+				this.displayText = errorDisplayText;
+				break;
+		}
 
 		setLayout( new BorderLayout() );
 		setBorder( new EmptyBorder( 5, 0, 0, 0 ) );
@@ -56,11 +75,15 @@ public class MetricsInfoBox extends JPanel
 		final JMenuItem resetOthers = new JMenuItem( "Reset Others" );
 		resetOthers.addActionListener( e -> plugin.resetOthers( type, name ) );
 
+		final JMenuItem blacklistEntry = new JMenuItem( "Blacklist NPC" );
+		blacklistEntry.addActionListener( e -> plugin.blacklistNPC( type, name ) );
+
 		final JPopupMenu popupMenu = new JPopupMenu();
 		popupMenu.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
 
 		popupMenu.add( reset );
 		popupMenu.add( resetOthers );
+		popupMenu.add( blacklistEntry );
 
 		headerPanel.setBackground( ColorScheme.DARKER_GRAY_COLOR );
 		headerPanel.setLayout( new DynamicGridLayout( 2, 1,0, -7 ) );
@@ -125,16 +148,11 @@ public class MetricsInfoBox extends JPanel
 			panel.revalidate();
 		}
 
-		switch ( type )
-		{
-			case MONSTERS:
-				nameStat.setText( htmlLabel( "", name ) );
-				topLeftStat.setText( htmlLabel( "Kills:", quantity ) );
-				topRightStat.setText( htmlLabel( "KPH:",  qph ) );
-				bottomLeftStat.setText( htmlLabel( "Damage:", altQuantity ) );
-				bottomRightStat.setText( htmlLabel( "DPS:", altRate ) );
-				break;
-		}
+		nameStat.setText( htmlLabel( displayText[ textLocation.NAME.ordinal() ], name ) );
+		topLeftStat.setText( htmlLabel( displayText[ textLocation.TOP_LEFT.ordinal() ], quantity ) );
+		topRightStat.setText( htmlLabel( displayText[ textLocation.TOP_RIGHT.ordinal() ], qph ) );
+		bottomLeftStat.setText( htmlLabel( displayText[ textLocation.BOTTOM_LEFT.ordinal() ], altQuantity ) );
+		bottomRightStat.setText( htmlLabel( displayText[ textLocation.BOTTOM_RIGHT.ordinal() ], altRate ) );
 	}
 
 	private void rebuildAsync( JComponent panel, String name, long quantity, float qph )
@@ -145,14 +163,9 @@ public class MetricsInfoBox extends JPanel
 			panel.revalidate();
 		}
 
-		switch ( type )
-		{
-			case MONSTERS:
-				nameStat.setText( htmlLabel( "", name ) );
-				topLeftStat.setText( htmlLabel( "Kills:", quantity ) );
-				topRightStat.setText( htmlLabel( "KPH:",  qph ) );
-				break;
-		}
+		nameStat.setText( htmlLabel( displayText[ textLocation.NAME.ordinal() ], name ) );
+		topLeftStat.setText( htmlLabel( displayText[ textLocation.TOP_LEFT.ordinal() ], quantity ) );
+		topRightStat.setText( htmlLabel( displayText[ textLocation.TOP_RIGHT.ordinal() ], qph ) );
 	}
 
 	static String htmlLabel( String key, float value )
