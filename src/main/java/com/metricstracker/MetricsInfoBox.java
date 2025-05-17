@@ -77,7 +77,6 @@ public class MetricsInfoBox extends JPanel
 
 		final JMenuItem blacklistEntry = new JMenuItem( "Blacklist NPC" );
 		blacklistEntry.addActionListener( e -> plugin.blacklistNPC( type, name ) );
-
 		final JPopupMenu popupMenu = new JPopupMenu();
 		popupMenu.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
 

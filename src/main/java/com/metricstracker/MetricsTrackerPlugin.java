@@ -2,11 +2,13 @@ package com.metricstracker;
 
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
+
 import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
+
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -47,8 +49,7 @@ public class MetricsTrackerPlugin extends Plugin
     private MetricsTrackerConfig config;
     @Inject
     private ClientToolbar clientToolbar;
-    @Inject
-    private ItemManager itemManager;
+
     private static final String ICON_FILE = "/metrics_tracker_icon.png";
     private static final String PLUGIN_NAME = "Metrics Tracker";
     private final DamageHandler damageHandler = new DamageHandler();
@@ -113,7 +114,7 @@ public class MetricsTrackerPlugin extends Plugin
             blacklist = Text.fromCSV( config.blacklistedNPCs().toLowerCase() );
             bUpdateConfig = false;
         }
-
+        
         if ( config.refreshRate() > 0 )
         {
             tickCounter = ( tickCounter + 1 ) % config.refreshRate();

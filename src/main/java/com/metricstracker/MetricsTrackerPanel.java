@@ -11,6 +11,7 @@ import javax.inject.Inject;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ public class MetricsTrackerPanel extends PluginPanel
     private final Map< MetricsInfoBox.infoBoxType, Map< String, MetricsInfoBox > > infoBoxes = new HashMap<>();
     private final Map< MetricsInfoBox.infoBoxType, MetricsManager > metrics = new HashMap<>();
     private MetricsInfoBox.infoBoxType currentDisplayType = MetricsInfoBox.infoBoxType.MONSTERS;
+    
     JComponent infoBoxPanel;
 
     public MetricsTrackerPanel( MetricsTrackerPlugin metricsTrackerPlugin, Client client )

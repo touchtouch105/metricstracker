@@ -70,6 +70,7 @@ public class DamageHandler
         {
             return false;
         }
+      
         NPC npc = ( NPC ) actor;
 
         if ( hitsplat.isMine()

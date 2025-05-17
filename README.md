@@ -11,3 +11,4 @@ Metrics will update either when a new data point comes in, or the background ref
 
 In order to blacklist an npc, you can either enter the name manually in the "Blacklisted NPCs" field, or right click on a metric that has popped up and click blacklist NPC.
 The format for the Blacklisted NPCs field is a comma separated list of npc names. This field is not case sensitive. Example of a blacklist: imp, monkey, black demon
+
