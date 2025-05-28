@@ -14,7 +14,6 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.NpcUtil;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -124,7 +123,7 @@ public class MetricsTrackerPlugin extends Plugin
             }
         }
 
-        damageHandler.tick( npcUtil, eventBus );
+        damageHandler.tick( npcUtil, eventBus, client.getLocalPlayer().getLocalLocation() );
     }
 
     @Subscribe

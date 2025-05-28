@@ -3,6 +3,7 @@ package com.metricstracker;
 import net.runelite.api.Actor;
 import net.runelite.api.Hitsplat;
 import net.runelite.api.NPC;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.gameval.AnimationID;
 import net.runelite.api.gameval.NpcID;
@@ -102,19 +103,21 @@ public class DamageHandler
 
     private void emitMonsterKilledEvent( Actor actor )
     {
-        MetricEvent metricEvent = new MetricEvent( MetricEvent.eventType.MONSTERS_KILLED, actor.getName(), 1 );
+        MetricEvent metricEvent = new MetricEvent( MetricEvent.eventType.MONSTERS_KILLED, getSquishedKey( actor.getName() ), 1 );
+
         tickCounter = 0;
         eventsToValidate.put( actor, metricEvent);
     }
 
     private void emitDamageDoneEvent( Actor actor, Hitsplat hitsplat, EventBus eventBus )
     {
-        MetricEvent metricEvent = new MetricEvent( MetricEvent.eventType.DAMAGE_DEALT, actor.getName(), hitsplat.getAmount() );
+        MetricEvent metricEvent = new MetricEvent( MetricEvent.eventType.DAMAGE_DEALT, getSquishedKey( actor.getName() ), hitsplat.getAmount() );
         eventBus.post( metricEvent );
     }
 
-    public void tick( NpcUtil npcUtil, EventBus eventBus )
+    public void tick( NpcUtil npcUtil, EventBus eventBus, LocalPoint playerLocation )
     {
+        boolean bPosted = false;
         int sz = eventsToValidate.keySet().size() - 1;
         if ( sz >= 0 )
         {
@@ -123,9 +126,25 @@ public class DamageHandler
             {
                 Actor actor = actors[ i ];
 
-                if ( isActorDead( actor, npcUtil ) )
+                if ( isActorDead( actor, npcUtil, playerLocation ) )
                 {
-                    eventBus.post( eventsToValidate.get( actor ) );
+                    // Moons bosses have multiple forms, and will count as individual kills unless crunched into 1 kill
+                    String name = eventsToValidate.get( actor ).name;
+                    if ( name.equals( "Eclipse Moon" )
+                    ||   name.equals( "Blue Moon" )
+                    ||   name.equals( "Blood Moon" ) )
+                    {
+                        if ( !bPosted )
+                        {
+                            eventBus.post( eventsToValidate.get( actor ) );
+                            bPosted = true;
+                        }
+                    }
+                    else
+                    {
+                        eventBus.post( eventsToValidate.get( actor ) );
+                    }
+
                     eventsToValidate.remove( actor );
                 }
             }
@@ -140,11 +159,11 @@ public class DamageHandler
         }
     }
 
-    private boolean isActorDead( Actor actor, NpcUtil npcUtil )
+    private boolean isActorDead( Actor actor, NpcUtil npcUtil, LocalPoint playerLocation )
     {
         if ( actor == null
         ||   npcUtil.isDying( ( NPC ) actor )
-        ||   damageHandlerCheckSpecialCases( ( NPC ) actor ) )
+        ||   damageHandlerCheckSpecialCases( ( NPC ) actor, playerLocation ) )
         {
             return true;
         }
@@ -152,7 +171,7 @@ public class DamageHandler
         return false;
     }
 
-    private boolean damageHandlerCheckSpecialCases( NPC npc )
+    private boolean damageHandlerCheckSpecialCases( NPC npc, LocalPoint playerLocation )
     {
         int id = npc.getId();
 
@@ -166,8 +185,34 @@ public class DamageHandler
             case NpcID.NIGHTMARE_TOTEM_3_CHARGED:
             case NpcID.NIGHTMARE_TOTEM_4_CHARGED:
                 return true;
+            // Special case to check for moon of peril dying
+            case -1:
+                return ( ( playerLocation.getX() == 6208 && playerLocation.getY() == 6976 )
+                      || ( playerLocation.getX() == 7104 && playerLocation.getY() == 6976 )
+                      || ( playerLocation.getX() == 6208 && playerLocation.getY() == 6720 ) );
             default:
                 return false;
         }
+    }
+
+    String getSquishedKey( String key )
+    {
+        switch ( key )
+        {
+            case "<col=00ffff>Cracked ice</col>":
+            case "<col=00ffff>Frozen weapons</col>":
+                return "Frozen weapons";
+            case "Blue Moon":
+            case "Enraged Blue Moon":
+                return "Blue Moon";
+            case "Eclipse Moon":
+            case "Enraged Eclipse Moon":
+                return "Eclipse Moon";
+            case "Blood Moon":
+            case "Enraged Blood Moon":
+                return "Blood Moon";
+        }
+
+        return key;
     }
 }
