@@ -27,7 +27,7 @@ dependencies {
 }
 
 group = 'com.metricstracker'
-version = 'v1.0.3'
+version = 'v1.0.4'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile).configureEach {
