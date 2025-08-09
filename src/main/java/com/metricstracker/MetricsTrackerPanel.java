@@ -20,6 +20,7 @@ public class MetricsTrackerPanel extends PluginPanel
     @Inject
     private Client client;
     private final MetricsTrackerPlugin plugin;
+    private final MetricsSnapshot snapshotManager;
     private final JPanel overallPanel = new JPanel();
     private final JLabel totalQuantity = new JLabel( "Killed:" );
     private final JLabel totalRate = new JLabel( "KPH:" );
@@ -31,11 +32,12 @@ public class MetricsTrackerPanel extends PluginPanel
     
     JComponent infoBoxPanel;
 
-    public MetricsTrackerPanel( MetricsTrackerPlugin metricsTrackerPlugin, Client client )
+    public MetricsTrackerPanel( MetricsTrackerPlugin metricsTrackerPlugin, MetricsSnapshot snapshotManager, Client client )
     {
         super();
         this.plugin = metricsTrackerPlugin;
         this.client = client;
+        this.snapshotManager = snapshotManager;
 
         setBorder( new EmptyBorder( 6, 6, 6, 6 ) );
         setBackground( ColorScheme.DARK_GRAY_COLOR );
@@ -141,22 +143,31 @@ public class MetricsTrackerPanel extends PluginPanel
         metric = metrics.get( type );
         MetricsInfoBox infoBox = infoBoxes.get( type ).get( eventOriginalName );
 
+        final long quant = metric.getCumulativeQuantity( eventOriginalName );
+        final float rate = metric.getQuantityPerHour( eventOriginalName );
+        final long altQuant = metric.getCumulativeQuantity( metricEvent.getName() );
+        final float altRate = metric.getQuantityPerSecond( metricEvent.getName() );
+
         if ( type == MetricsInfoBox.infoBoxType.MONSTERS
         &&   metricEvent.getType() == MetricEvent.eventType.DAMAGE_DEALT )
         {
             infoBox.update( infoBoxPanel,
                             eventOriginalName,
-                            metric.getCumulativeQuantity( eventOriginalName ),
-                            metric.getQuantityPerHour( eventOriginalName ),
-                            metric.getCumulativeQuantity( metricEvent.getName() ),
-                            metric.getQuantityPerSecond( metricEvent.getName() ) );
+                            quant,
+                            rate,
+                            altQuant,
+                            altRate );
+
+            snapshotManager.updateSnapshot( eventOriginalName, quant, rate, altQuant, altRate );
         }
         else
         {
             infoBox.update( infoBoxPanel,
                             eventOriginalName,
-                            metric.getCumulativeQuantity( eventOriginalName ),
-                            metric.getQuantityPerHour( eventOriginalName ) );
+                            quant,
+                            rate );
+
+            snapshotManager.updateSnapshot( eventOriginalName, quant, rate );
         }
     }
 

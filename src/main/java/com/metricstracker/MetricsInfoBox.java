@@ -9,6 +9,8 @@ import net.runelite.client.util.ColorUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import java.awt.*;
 
 public class MetricsInfoBox extends JPanel
@@ -44,13 +46,17 @@ public class MetricsInfoBox extends JPanel
 	private final JLabel bottomLeftStat = new JLabel();
 	private final JLabel topRightStat = new JLabel();
 	private final JLabel bottomRightStat = new JLabel();
+	private static final String REMOVE_STATE = "Remove from Canvas";
+	private static final String ADD_STATE = "Add to Canvas";
 	private final String[] displayText;
 	private final String errorDisplayText[] = { "", "Quantity:", "Per Hour:", "Alt Quantity:", "Per Hour:" };
 	private final String monsterDisplayText[] = { "", "Killed:", "KPH:", "Damage:", "DPS:" };
+	private static MetricsTrackerPlugin plugin;
 
 	MetricsInfoBox( MetricsTrackerPlugin plugin, JComponent panel, String name, infoBoxType type )
 	{
 		this.name = name;
+		this.plugin = plugin;
 
 		switch ( type )
 		{
@@ -75,6 +81,8 @@ public class MetricsInfoBox extends JPanel
 		final JMenuItem resetOthers = new JMenuItem( "Reset Others" );
 		resetOthers.addActionListener( e -> plugin.resetOthers( type, name ) );
 
+		final JMenuItem canvasItem = new JMenuItem( ADD_STATE );
+
 		final JMenuItem blacklistEntry = new JMenuItem( "Blacklist NPC" );
 		blacklistEntry.addActionListener( e -> plugin.blacklistNPC( type, name ) );
 		final JPopupMenu popupMenu = new JPopupMenu();
@@ -83,6 +91,38 @@ public class MetricsInfoBox extends JPanel
 		popupMenu.add( reset );
 		popupMenu.add( resetOthers );
 		popupMenu.add( blacklistEntry );
+		popupMenu.add( canvasItem );
+
+		popupMenu.addPopupMenuListener(new PopupMenuListener()
+		{
+			@Override
+			public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent)
+			{
+				canvasItem.setText(plugin.hasOverlay(name) ? REMOVE_STATE : ADD_STATE);
+			}
+
+			@Override
+			public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent)
+			{
+			}
+
+			@Override
+			public void popupMenuCanceled(PopupMenuEvent popupMenuEvent)
+			{
+			}
+		});
+
+		canvasItem.addActionListener(e ->
+		{
+			if (canvasItem.getText().equals(REMOVE_STATE))
+			{
+				plugin.removeFromCanvas( name );
+			}
+			else
+			{
+				plugin.addToCanvas( name );
+			}
+		});
 
 		headerPanel.setBackground( ColorScheme.DARKER_GRAY_COLOR );
 		headerPanel.setLayout( new DynamicGridLayout( 2, 1,0, -7 ) );

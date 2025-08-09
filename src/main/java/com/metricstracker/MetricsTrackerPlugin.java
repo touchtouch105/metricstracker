@@ -19,6 +19,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
 
@@ -48,6 +49,8 @@ public class MetricsTrackerPlugin extends Plugin
     private MetricsTrackerConfig config;
     @Inject
     private ClientToolbar clientToolbar;
+    @Inject
+    private OverlayManager overlayManager;
 
     private static final String ICON_FILE = "/metrics_tracker_icon.png";
     private static final String PLUGIN_NAME = "Metrics Tracker";
@@ -57,11 +60,12 @@ public class MetricsTrackerPlugin extends Plugin
     private int tickCounter = 0;
     private List< String > blacklist = new ArrayList<>();
     private static boolean bUpdateConfig = false;
+    private final MetricsSnapshot snapshotManager = new MetricsSnapshot();
 
     @Override
     protected void startUp() throws Exception
     {
-         loggerPanel = new MetricsTrackerPanel( this, client );
+         loggerPanel = new MetricsTrackerPanel( this, snapshotManager, client );
          final BufferedImage icon = ImageUtil.loadImageResource( getClass(), ICON_FILE );
          navigationButton = NavigationButton.builder()
 											.tooltip( PLUGIN_NAME )
@@ -156,6 +160,21 @@ public class MetricsTrackerPlugin extends Plugin
         loggerPanel.removeOthers( type, name );
     }
 
+    void addToCanvas( String name )
+    {
+        overlayManager.add( new MetricsTrackerOverlay( this, snapshotManager, name ) );
+    }
+	
+    void removeFromCanvas( String name )
+    {
+        overlayManager.removeIf( e -> e instanceof MetricsTrackerOverlay && ((MetricsTrackerOverlay) e).getName() == name );
+    }
+
+    boolean hasOverlay( String name )
+    {
+        return overlayManager.anyMatch(o -> o instanceof MetricsTrackerOverlay && ((MetricsTrackerOverlay) o).getName() == name);
+    }
+	
     void blacklistNPC( MetricsInfoBox.infoBoxType type, String npcName )
     {
         List< String > vals = new ArrayList<>();
