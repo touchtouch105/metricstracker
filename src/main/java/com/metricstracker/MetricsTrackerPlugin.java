@@ -148,6 +148,7 @@ public class MetricsTrackerPlugin extends Plugin
     public void resetState()
     {
         loggerPanel.resetAllInfoBoxes();
+		overlayManager.removeIf( e -> e instanceof MetricsTrackerOverlay );
     }
 
     public void resetSingleMetric( MetricsInfoBox.infoBoxType type, String name )
@@ -185,6 +186,7 @@ public class MetricsTrackerPlugin extends Plugin
             vals.add( npcName );
             configManager.setConfiguration( "metricstracker", "blacklistedNPCs", Text.toCSV( vals ) );
             bUpdateConfig = true;
+			removeFromCanvas( npcName );
         }
 
         resetSingleMetric( type, npcName );
