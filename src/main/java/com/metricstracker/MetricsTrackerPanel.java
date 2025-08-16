@@ -305,6 +305,8 @@ public class MetricsTrackerPanel extends PluginPanel
                     metricEvent.quantity = 0;
 
                     updateInfoBox( type, metricEvent, infoBoxKey );
+
+                    metrics.get( type ).incrementDurations();
                 }
             }
         }
