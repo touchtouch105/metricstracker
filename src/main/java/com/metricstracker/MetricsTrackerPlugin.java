@@ -128,7 +128,6 @@ public class MetricsTrackerPlugin extends Plugin
         }
 
         damageHandler.tick( npcUtil, eventBus, client.getLocalPlayer().getLocalLocation() );
-        loggerPanel.tick();
     }
 
     @Subscribe
