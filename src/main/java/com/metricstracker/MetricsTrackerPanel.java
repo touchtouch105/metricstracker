@@ -252,6 +252,14 @@ public class MetricsTrackerPanel extends PluginPanel
         }
     }
 
+    public void tick()
+    {
+        for ( MetricsInfoBox.infoBoxType type : metrics.keySet() )
+        {
+            metrics.get( type ).incrementDurations();
+        }
+    }
+
     private void updateOverallTrackerText()
     {
         String quantity;
